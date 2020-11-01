@@ -1,6 +1,6 @@
 ###################
 # PARAMETERS TO MODIFY
-IMAGE_NAME = image_name
+IMAGE_NAME = statementparser
 IMAGE_TAG = 1.0
 ###################
 # FIXED PARAMETERS
