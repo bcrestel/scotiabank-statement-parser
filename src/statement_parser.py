@@ -1,12 +1,14 @@
 import re
 from typing import List
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+
 from confs.constants import FILE_PATH
 
-MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Nov', 'Dec']
-STATEMENT_COLUMNS = ['reference', 'transaction_date', 'post_date', 'details', 'amount']
+MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Nov", "Dec"]
+STATEMENT_COLUMNS = ["reference", "transaction_date", "post_date", "details", "amount"]
+
 
 class StatementParser:
     def __init__(self, file_path: str):
@@ -19,7 +21,9 @@ class StatementParser:
         self._statements = self._split_raw_file(self._raw_file)
         for key in self._statements.keys():
             try:
-                self._statements[key] = self._convert_statement_str_to_pd(self._statements[key])
+                self._statements[key] = self._convert_statement_str_to_pd(
+                    self._statements[key]
+                )
             except ValueError as err:
                 print(key)
                 raise err
@@ -46,7 +50,6 @@ class StatementParser:
                 line_count += 2
         return statements
 
-
     def _convert_statement_str_to_pd(self, statement: str) -> pd.DataFrame:
         """
         Process a single statement and convert to a pd.DataFrame
@@ -69,7 +72,9 @@ class StatementParser:
         self._check_pd_converstion(df_statement=df_statement, all_lines=all_lines)
         return df_statement
 
-    def _check_pd_converstion(self, df_statement: pd.DataFrame, all_lines: List[List[str]]) -> None:
+    def _check_pd_converstion(
+        self, df_statement: pd.DataFrame, all_lines: List[List[str]]
+    ) -> None:
         """
         Run a few checks on the converted statement
 
@@ -80,13 +85,11 @@ class StatementParser:
             print(len(df_statement), len(all_lines))
             raise ValueError("Some activities were lost during the conversion")
 
-        references = df_statement['reference'].to_numpy(dtype=float)
+        references = df_statement["reference"].to_numpy(dtype=float)
         if np.all(references != np.linspace(1, len(all_lines), len(all_lines))):
             print(references)
             print(all_lines)
             raise ValueError("References are not contiguous")
-
-
 
     def _parse_single_line(self, statement_line: str) -> List[str]:
         """
@@ -95,13 +98,13 @@ class StatementParser:
         :param statement_line: a line from the statement
         :return: split into columns
         """
-        space_split = statement_line.split(' ')
+        space_split = statement_line.split(" ")
 
         ref = int(space_split[0])
 
-        transaction_date = ' '.join(space_split[1:3])
+        transaction_date = " ".join(space_split[1:3])
 
-        post_date = ' '.join(space_split[3:5])
+        post_date = " ".join(space_split[3:5])
 
         # find column of the amount
         col_amount = -1
@@ -110,12 +113,12 @@ class StatementParser:
         amount = space_split[col_amount]
         amount = self._convert_amount_to_float(amount=amount)
 
-        details = ' '.join(space_split[5:col_amount])
+        details = " ".join(space_split[5:col_amount])
         return ref, transaction_date, post_date, details, amount
 
     def _convert_amount_to_float(self, amount: str) -> float:
-        amount = amount.replace(',','')
-        if amount[-1] == '-':
+        amount = amount.replace(",", "")
+        if amount[-1] == "-":
             amount = -1.0 * float(amount[:-1])
         else:
             amount = float(amount)
