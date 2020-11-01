@@ -2,6 +2,7 @@ import re
 from typing import List
 
 import pandas as pd
+import numpy as np
 from confs.constants import FILE_PATH
 
 MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Nov', 'Dec']
@@ -17,7 +18,11 @@ class StatementParser:
         self._raw_file = self._read_raw_file(file_path=self._file_path)
         self._statements = self._split_raw_file(self._raw_file)
         for key in self._statements.keys():
-            self._statements[key] = self._convert_statement_str_to_pd(self._statements[key])
+            try:
+                self._statements[key] = self._convert_statement_str_to_pd(self._statements[key])
+            except ValueError as err:
+                print(key)
+                raise err
 
     def _read_raw_file(self, file_path: str) -> str:
         with open(file_path, "r", encoding="utf-8-sig") as file:
@@ -61,7 +66,27 @@ class StatementParser:
             all_lines.append(line)
             index_line_start = match.start()
         df_statement = pd.DataFrame(all_lines, columns=STATEMENT_COLUMNS)
+        self._check_pd_converstion(df_statement=df_statement, all_lines=all_lines)
         return df_statement
+
+    def _check_pd_converstion(self, df_statement: pd.DataFrame, all_lines: List[List[str]]) -> None:
+        """
+        Run a few checks on the converted statement
+
+        :param df_statement: statement in a dataframe format
+        :param all_lines: all lines parsed
+        """
+        if len(df_statement) != len(all_lines):
+            print(len(df_statement), len(all_lines))
+            raise ValueError("Some activities were lost during the conversion")
+
+        references = df_statement['reference'].to_numpy(dtype=float)
+        if np.all(references != np.linspace(1, len(all_lines), len(all_lines))):
+            print(references)
+            print(all_lines)
+            raise ValueError("References are not contiguous")
+
+
 
     def _parse_single_line(self, statement_line: str) -> List[str]:
         """
