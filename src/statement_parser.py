@@ -1,12 +1,11 @@
 import os
 import pathlib
 import re
+import sys
 from typing import List
 
 import numpy as np
 import pandas as pd
-
-from confs.constants import FILE_PATH, OUTPUT_DIR
 
 MONTHS = [
     "Jan",
@@ -45,14 +44,15 @@ class StatementParser:
                 raise err
 
     @classmethod
-    def convert_to_csv(cls, input_file: str, output_dir: str) -> None:
+    def convert_to_csv(cls, input_file: str) -> None:
         """
-        Process the input_file and save each statement in output_dir
+        Process the input_file and save each statement in an output_dir
 
         :param input_file: intput_file
-        :param output_dir: directory where to save the processed statements
         """
         parser = cls(file_path=input_file)
+
+        output_dir = pathlib.Path(pathlib.Path(input_file).parent, "results")
         os.makedirs(output_dir, exist_ok=True)
         for statement_period, statement_activities in parser._statements.items():
             path = pathlib.Path(output_dir, statement_period)
@@ -168,4 +168,5 @@ class StatementParser:
 
 
 if __name__ == "__main__":
-    StatementParser.convert_to_csv(input_file=FILE_PATH, output_dir=OUTPUT_DIR)
+    input = sys.argv[1]
+    StatementParser.convert_to_csv(input_file=input)

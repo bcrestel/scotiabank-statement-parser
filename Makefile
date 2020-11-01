@@ -6,7 +6,7 @@ IMAGE_TAG = 1.0
 # FIXED PARAMETERS
 TEST_FOLDER = src/tests
 FORMAT_FOLDER = src
-DOCKER_RUN = docker run -it --entrypoint=bash -w /home -v $(PWD):/home/ -v $(HOME)/Documents:/docs/
+DOCKER_RUN = docker run -it --entrypoint=bash -w /home -v $(PWD):/home/ -v $(HOME)/Documents:$(HOME)/Documents
 DOCKER_IMAGE = $(IMAGE_NAME):$(IMAGE_TAG)
 DOCKERFILE_PIPTOOLS = Dockerfile_piptools
 DOCKER_IMAGE_PIPTOOLS = piptools:1.0
@@ -45,7 +45,8 @@ upgrade:
 .PHONY : run
 run: build
 	$(info ***** Running *****)
-	$(DOCKER_RUN) $(DOCKER_IMAGE)  -c "cd src; python hello_world.py"
+	@echo $(INPUT)
+	$(DOCKER_RUN) $(DOCKER_IMAGE)  -c "cd src; python statement_parser.py $(INPUT)"
 
 .PHONY : shell
 shell: build
