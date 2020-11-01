@@ -1,12 +1,27 @@
+import os
+import pathlib
 import re
 from typing import List
 
 import numpy as np
 import pandas as pd
 
-from confs.constants import FILE_PATH
+from confs.constants import FILE_PATH, OUTPUT_DIR
 
-MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Nov", "Dec"]
+MONTHS = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+]
 STATEMENT_COLUMNS = ["reference", "transaction_date", "post_date", "details", "amount"]
 
 
@@ -26,14 +41,38 @@ class StatementParser:
                 )
             except ValueError as err:
                 print(key)
+                print(self._statements[key])
                 raise err
 
-    def _read_raw_file(self, file_path: str) -> str:
+    @classmethod
+    def convert_to_csv(cls, input_file: str, output_dir: str) -> None:
+        """
+        Process the input_file and save each statement in output_dir
+
+        :param input_file: intput_file
+        :param output_dir: directory where to save the processed statements
+        """
+        parser = cls(file_path=input_file)
+        os.makedirs(output_dir, exist_ok=True)
+        for statement_period, statement_activities in parser._statements.items():
+            path = pathlib.Path(output_dir, statement_period)
+            statement_activities.to_csv(path)
+
+    @staticmethod
+    def _read_raw_file(file_path: str) -> str:
         with open(file_path, "r", encoding="utf-8-sig") as file:
             input_file = file.read()
         return input_file
 
-    def _split_raw_file(self, raw_file: str) -> dict:
+    @staticmethod
+    def _split_raw_file(raw_file: str) -> dict:
+        """
+        Split a raw statement file with statements for multiple periods
+        into a dict: period -> statement
+
+        :param raw_file: each period in a single str
+        :return: dict(str, str)
+        """
         input_file = raw_file.split("\n")
 
         line_count = 0
@@ -60,6 +99,7 @@ class StatementParser:
         regex_pattern = f"\d\d\d\s+(?:{'|'.join(MONTHS)})"
         index_regex_match = re.finditer(regex_pattern, statement)
         all_lines = []
+        index_line_start = 0
         for line_number, match in enumerate(index_regex_match):
             if line_number == 0:
                 index_line_start = match.start()
@@ -72,8 +112,9 @@ class StatementParser:
         self._check_pd_converstion(df_statement=df_statement, all_lines=all_lines)
         return df_statement
 
+    @staticmethod
     def _check_pd_converstion(
-        self, df_statement: pd.DataFrame, all_lines: List[List[str]]
+        df_statement: pd.DataFrame, all_lines: List[List[str]]
     ) -> None:
         """
         Run a few checks on the converted statement
@@ -116,7 +157,8 @@ class StatementParser:
         details = " ".join(space_split[5:col_amount])
         return ref, transaction_date, post_date, details, amount
 
-    def _convert_amount_to_float(self, amount: str) -> float:
+    @staticmethod
+    def _convert_amount_to_float(amount: str) -> float:
         amount = amount.replace(",", "")
         if amount[-1] == "-":
             amount = -1.0 * float(amount[:-1])
@@ -126,5 +168,4 @@ class StatementParser:
 
 
 if __name__ == "__main__":
-    bb = StatementParser(FILE_PATH)
-    print(bb._statements)
+    StatementParser.convert_to_csv(input_file=FILE_PATH, output_dir=OUTPUT_DIR)
